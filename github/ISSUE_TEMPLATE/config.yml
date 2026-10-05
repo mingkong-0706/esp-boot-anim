@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+blank_issues_enabled: true
+contact_links:
+  - name: 开不了机 / 恢复方法（先看这个）
+    url: https://github.com/OWNER/REPO/blob/main/docs/恢复与排错.md
+    about: 最快的恢复办法：在恢复环境的命令提示符里执行 ren S:\EFI\Microsoft\Boot\bootmgfw-orig.efi bootmgfw.efi
+  - name: 安全漏洞（请勿公开讨论）
+    url: https://github.com/OWNER/REPO/security/advisories/new
+    about: 通过 GitHub Security Advisories 私下报告，详见 SECURITY.md
+  - name: 怎么编译 / 常见报错
+    url: https://github.com/OWNER/REPO/blob/main/编译说明.md
+    about: EDK2 构建的三条路线，以及 GCC5、LibraryClasses 之类报错的对照表

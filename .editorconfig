@@ -1,0 +1,72 @@
+# =====================================================================
+#  .editorconfig -- 让不同编辑器写出来的文件保持一致
+#
+#  这里的编码规则不是随便定的，是踩过坑才固化成规则的，
+#  和 tools/check-textfiles.ps1（检查）与 tools/fix-textfiles.ps1（修复）
+#  一一对应：
+#    .bat/.cmd 必须纯 ASCII + CRLF  -> cmd.exe 按 OEM 代码页解析，
+#                                     非 ASCII 会解析出乱命令；裸 LF 会让
+#                                     goto :label 和 (...) 块出错
+#    .ps1/.c/.h/.cs 必须带 UTF-8 BOM -> 否则 Windows PowerShell 5.1
+#                                     和 MSVC 会按系统 ANSI 代码页读，中文乱码
+#    .inf/.dsc/.dec 必须纯 ASCII     -> EDK2 构建工具在非 UTF-8 locale 下会解码失败
+#    .cfg 不带 BOM                   -> UEFI 程序直接读它
+# =====================================================================
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# ---- cmd.exe 解析的：纯 ASCII + CRLF ----
+[*.{bat,cmd}]
+charset = ascii
+end_of_line = crlf
+indent_style = space
+indent_size = 2
+
+# ---- Windows 脚本：必须带 BOM（行尾 LF 即可） ----
+[*.{ps1,psm1}]
+charset = utf-8-bom
+end_of_line = lf
+
+# ---- C 源码：EDK2 惯例 2 空格缩进；中文注释必须带 BOM ----
+[*.{c,h}]
+charset = utf-8-bom
+indent_size = 2
+tab_width = 2
+
+# ---- C# 启动器：中文提示需要 BOM ----
+[*.cs]
+charset = utf-8-bom
+indent_size = 4
+
+# ---- EDK2 元数据：必须纯 ASCII ----
+[*.{inf,dsc,dec}]
+charset = ascii
+end_of_line = lf
+
+# ---- Python ----
+[*.py]
+indent_size = 4
+
+# ---- 配置模板：不要 BOM（UEFI 程序直接读它） ----
+[*.cfg]
+charset = utf-8
+end_of_line = lf
+
+# ---- 文档不要裁掉行尾空格（Markdown 里两个空格是硬换行） ----
+[*.md]
+trim_trailing_whitespace = false
+
+# ---- YAML / JSON ----
+[*.{yml,yaml,json}]
+indent_size = 2
+
+# ---- 生成物、第三方，别管 ----
+[tools/_testdata/**]
+insert_final_newline = false

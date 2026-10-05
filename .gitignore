@@ -1,0 +1,70 @@
+# =====================================================================
+#  .gitignore
+#
+#  原则：构建产物、第三方二进制、生成物都不进仓库。
+#  想知道到底会提交什么，跑：  git status --short
+#
+#  注意：本项目的 build/ 目录放的是**构建定义**（EDK2 的 .inf/.dsc/.dec、
+#  构建脚本、gnu-efi 的 Makefile），是源码，必须提交。
+#  EDK2 真正的编译输出在 $EDK2_DIR/Build/ 下，不在本仓库里。
+#  所以这里**没有** [Bb]uild/ 这条规则 —— 加了会把整个 build/ 目录排除掉，
+#  提交出去的仓库就编译不了了。
+# =====================================================================
+
+# ---------- 构建产物 ----------
+gui/BootAnimGUI.exe
+install/BootAnimSetup.exe
+gui/_selftest_tmp.ps1
+dist/bootanim.efi
+dist/anim.baa
+build/**/Build/
+build/**/Debug/
+build/**/Release/
+
+# ---------- 第三方二进制：不要提交 ----------
+# 本项目是 GPL-3.0-or-later，而 ffmpeg 的常见 Windows 构建也是 GPL v3，
+# 所以在许可证上提交它并不违规 —— 但它是 100 MB 的二进制，让仓库膨胀没意义。
+# 需要的人按 THIRD_PARTY_NOTICES.md 自己下载即可。
+ffmpeg-*/
+ffmpeg/
+ffmpeg.exe
+ffprobe.exe
+ffplay.exe
+gui/ffmpeg.exe
+gui/ffmpeg/
+tools/ffmpeg.exe
+tools/ffmpeg/
+
+# ---------- 生成的 / 临时的 ----------
+gui/ffmpeg_args.txt.bootanim-frames/
+tools/_testdata/
+tools/_*.py
+tools/_*.ps1
+**/__pycache__/
+*.pyc
+*.pyo
+*.obj
+*.pdb
+*.lib
+*.exp
+*.map
+*.dll
+*.ilk
+*.log
+*~
+
+# ---------- 编辑器 / IDE ----------
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.swp
+*.swo
+
+# ---------- Windows 系统文件 ----------
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+*.lnk

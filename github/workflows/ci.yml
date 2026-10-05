@@ -1,0 +1,128 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支的新提交取消上一次还在跑的
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ===================================================================
+  #  .baa 格式的参考实现 + C 源码静态检查
+  #  这两项不需要编译器，也不需要 Windows，跑得最快，所以放最前面
+  # ===================================================================
+  python:
+    name: Python (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装 Pillow
+        run: python -m pip install --upgrade pip pillow
+
+      - name: .baa 格式自测（参考实现，含损坏注入模糊测试）
+        run: python tools/selftest.py
+
+      - name: C 源码静态一致性
+        run: python tools/check_c.py src tools/hosttest
+
+  # ===================================================================
+  #  文本文件的编码与行尾
+  #  这一项同时也验证 .gitattributes 配置对不对 —— 如果 git 检出时
+  #  把 .bat 的 CRLF 换成了 LF，这里就会红
+  # ===================================================================
+  text:
+    name: 文本编码/行尾 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 检查 .bat/.cmd 纯 ASCII+CRLF、.ps1 带 BOM、EDK2 元数据纯 ASCII
+        shell: pwsh
+        run: ./tools/check-textfiles.ps1
+
+      - name: 所有 PowerShell 脚本语法解析
+        shell: pwsh
+        run: |
+          $fail = 0
+          Get-ChildItem -Recurse -Include *.ps1 | ForEach-Object {
+            $e = $null; $t = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$t, [ref]$e)
+            if ($e -and $e.Count) {
+              $fail++
+              Write-Host "FAIL $($_.Name)"
+              $e | Select-Object -First 5 | ForEach-Object {
+                Write-Host "   line $($_.Extent.StartLineNumber): $($_.Message)"
+              }
+            }
+          }
+          if ($fail -gt 0) { Write-Host "$fail 个脚本有语法错误" -ForegroundColor Red; exit 1 }
+          Write-Host '全部 PowerShell 脚本语法 OK' -ForegroundColor Green
+
+  # ===================================================================
+  #  图形界面相关：依赖 WinForms / System.Drawing / csc.exe，
+  #  只能在 Windows 上跑
+  # ===================================================================
+  gui:
+    name: 图形界面 (windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装 Pillow
+        run: python -m pip install --upgrade pip pillow
+
+      - name: 不显示窗口构造整个窗体（抓枚举/属性赋值错误）
+        shell: pwsh
+        run: ./tools/test-gui-build.ps1
+
+      - name: 配置读写 / .baa 头解析 / 自然排序
+        shell: pwsh
+        run: ./tools/test-gui-cfg.ps1
+
+      - name: 打包内核与 Python 参考实现逐像素比对（含 GIF 拆帧）
+        shell: pwsh
+        run: ./tools/test-gui-packer.ps1
+
+      - name: 视频拆帧接线（桩 ffmpeg）
+        shell: pwsh
+        run: ./tools/test-gui-video.ps1
+
+      - name: 打包主程序 exe
+        shell: pwsh
+        run: ./gui/build-gui-exe.ps1
+
+      - name: 打包安装程序 exe
+        shell: pwsh
+        run: ./install/build-setup-exe.ps1
+
+      - name: 上传构建产物（供手动检查）
+        uses: actions/upload-artifact@v4
+        with:
+          name: BootAnim-exe
+          path: |
+            gui/BootAnimGUI.exe
+            install/BootAnimSetup.exe
+          if-no-files-found: error

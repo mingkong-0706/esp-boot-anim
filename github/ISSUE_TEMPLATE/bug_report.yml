@@ -1,0 +1,151 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: 问题报告
+description: 报告一个 bug（装不上、画面不对、开不了机等）
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢花时间报告问题。这个项目动的是**系统引导路径**，所以下面几项信息
+        对定位问题特别关键，麻烦尽量填全。
+
+        > ⚠️ **如果你的机器现在开不了机**，请先看
+        > [docs/恢复与排错.md](https://github.com/OWNER/REPO/blob/main/docs/恢复与排错.md)
+        > 里的恢复步骤，把机器救回来再说 —— 最快的办法是在恢复环境的命令提示符里执行：
+        > `ren S:\EFI\Microsoft\Boot\bootmgfw-orig.efi bootmgfw.efi`
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: 先确认这几件事
+      options:
+        - label: 我已经看过 README 里的「排错」一节
+          required: true
+        - label: 我搜过已有的 issue，没有重复
+          required: true
+        - label: 如果我改了代码或配置，我知道那可能是我自己的问题
+          required: false
+
+  - type: dropdown
+    id: stage
+    attributes:
+      label: 问题出在哪个阶段
+      options:
+        - 安装/卸载（脚本或安装程序报错）
+        - 开机动画（播放、速度、画面、黑屏）
+        - 进来系统之后（引导接管没交回控制权、进了恢复界面）
+        - 图形界面工具本身（按钮报错、崩溃）
+        - 打包动画（GIF/视频拆帧、.baa 生成）
+        - 构建/编译
+        - 文档错误
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: BootAnim 版本
+      description: 界面状态栏或 `bootanim.cfg` 里能看到；从源码构建的话写 commit
+      placeholder: "1.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows 版本
+      description: 按 Win+R 输入 `winver` 能看到
+      placeholder: "Windows 11 23H2 (22631.4169)"
+    validations:
+      required: true
+
+  - type: input
+    id: firmware
+    attributes:
+      label: 主板 / 固件
+      description: 主板型号或整机型号；有条件的话写上 BIOS 版本和厂商
+      placeholder: "华硕 B650M 重炮手，BIOS 2413"
+    validations:
+      required: true
+
+  - type: input
+    id: secureboot
+    attributes:
+      label: Secure Boot 状态
+      description: 在「系统信息」(msinfo32) 里看「安全启动状态」
+      placeholder: "关闭 / 开启 / 不确定"
+    validations:
+      required: false
+
+  - type: input
+    id: esp
+    attributes:
+      label: EFI 分区大小与剩余空间
+      description: 用界面里的「打开 ESP 动画目录」，看那个盘的属性
+      placeholder: "100 MB，剩余 42 MB"
+    validations:
+      required: false
+
+  - type: input
+    id: animation
+    attributes:
+      label: 当前动画规格
+      description: 界面状态栏会显示；或写下你设的分辨率/帧数/帧率
+      placeholder: "1920x1080，60 帧，30fps，4.7 MiB，RLE"
+    validations:
+      required: false
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 具体现象
+      description: 你期望发生什么，实际发生了什么
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 越具体越好。如果是动画问题，说清楚是每次必现还是偶尔
+      placeholder: |
+        1. 双击 gui\BootAnimGUI.exe
+        2. 添加 60 张 1920x1080 的 PNG
+        3. 点「生成动画并写入 ESP」
+        4. 重启后 ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: debug
+    attributes:
+      label: DEBUG=1 的诊断输出（如果适用）
+      description: |
+        把 ESP 上 `bootanim.cfg` 的 `DEBUG=0` 改成 `DEBUG=1`，重启，
+        把屏幕上的几行字拍下来或抄下来。尤其是这几项：
+        `pacing=` / `hi-res timer=` / `cached=` / `avg frame ms=`
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志或报错原文
+      description: |
+        图形界面的「日志」窗格、安装脚本的输出、编译报错，直接粘过来。
+        报错原文比转述有用得多。
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: 你已经试过什么
+      placeholder: |
+        试过 ENABLED=0 禁用，开机正常 → 说明只是动画的问题
+        试过换 1280x720，还是黑屏
+    validations:
+      required: false

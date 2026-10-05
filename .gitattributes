@@ -1,0 +1,63 @@
+# =====================================================================
+#  .gitattributes -- 统一行尾和文本/二进制判定
+#
+#  这份文件对这个项目特别重要，原因是：
+#    * cmd.exe 解析 .bat/.cmd 时，裸 LF 会让 goto :label 和 (...) 块出错，
+#      所以批处理文件**必须**保持 CRLF
+#    * check-textfiles.ps1 会检查行尾，如果 git 检出时换了行尾，CI 就会红
+#    * .efi/.baa 这些是二进制，绝不能被行尾转换碰
+#
+#  规则一句话：除了 .bat/.cmd 必须 CRLF，其它文本一律 LF。
+#  对 .ps1 来说真正重要的是 **UTF-8 BOM**（决定 PowerShell 用哪种代码页读），
+#  行尾用 LF 在 Windows PowerShell 5.1 上完全没问题。
+# =====================================================================
+
+# 默认：由 git 自动判断文本/二进制，文本统一 LF
+* text=auto eol=lf
+
+# ---- 必须 CRLF：cmd.exe 的硬要求 ----
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# ---- 其余文本一律 LF（显式写出来，免得有人以为要 CRLF） ----
+*.ps1   text eol=lf
+*.psm1  text eol=lf
+*.c     text eol=lf
+*.h     text eol=lf
+*.cs    text eol=lf
+*.py    text eol=lf
+*.sh    text eol=lf
+*.cfg   text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.json  text eol=lf
+
+# ---- EDK2 元数据：构建工具是 Python，跨平台，必须 LF ----
+*.inf   text eol=lf
+*.dsc   text eol=lf
+*.dec   text eol=lf
+
+# ---- 二进制：一律不做任何转换 ----
+*.efi   binary
+*.baa   binary
+*.exe   binary
+*.dll   binary
+*.lib   binary
+*.obj   binary
+*.pdb   binary
+*.ico   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.bmp   binary
+*.zip   binary
+*.7z    binary
+*.woff  binary
+*.woff2 binary
+
+# ---- 让 GitHub 的语言统计别把第三方的东西算进来 ----
+tools/_testdata/** linguist-vendored
+docs/**            linguist-documentation

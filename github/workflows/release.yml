@@ -1,0 +1,84 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: Release
+
+# 打 v* 标签时自动构建 exe 并发到 Release
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: 构建并发布
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 读出版本号
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path src/BootAnim.c -Pattern 'BA_VERSION\s+"([^"]+)"' |
+                Select-Object -First 1).Matches.Groups[1].Value
+          if (-not $v) { throw '没能从 src/BootAnim.c 里读出 BA_VERSION' }
+          Write-Host "版本: $v"
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: 打包主程序
+        shell: pwsh
+        run: ./gui/build-gui-exe.ps1
+
+      - name: 打包安装程序
+        shell: pwsh
+        run: ./install/build-setup-exe.ps1
+
+      # 刻意只发"不内置 ffmpeg"的安装程序：
+      # ffmpeg 是 100 MB 的二进制，不适合当 Release 附件。
+      # （许可证上没障碍 —— 本项目是 GPL-3.0-or-later，和 GPLv3 的 ffmpeg 同族。
+      #   想要开箱即用的自己用 install\build-setup-exe.ps1 -WithFFmpeg 打包。）
+      - name: 校验产物
+        shell: pwsh
+        run: |
+          foreach ($f in 'gui/BootAnimGUI.exe', 'install/BootAnimSetup.exe') {
+            if (-not (Test-Path $f)) { throw "缺少产物: $f" }
+            $mb = [Math]::Round((Get-Item $f).Length / 1MB, 2)
+            Write-Host "  $f  ($mb MB)"
+          }
+          # 安全起见：确认安装程序没把 ffmpeg 打进去（应该只有 1 MB 以内）
+          $sz = (Get-Item 'install/BootAnimSetup.exe').Length
+          if ($sz -gt 5MB) { throw "安装程序体积异常（$sz 字节），可能误把 ffmpeg 打进去了" }
+
+      - name: 生成校验和
+        shell: pwsh
+        run: |
+          $lines = @()
+          foreach ($f in 'gui/BootAnimGUI.exe', 'install/BootAnimSetup.exe') {
+            $h = (Get-FileHash $f -Algorithm SHA256).Hash
+            $lines += "$h  $(Split-Path -Leaf $f)"
+          }
+          $lines | Set-Content -Path SHA256SUMS.txt -Encoding ascii
+          Get-Content SHA256SUMS.txt
+
+      - name: 发到 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: BootAnim v${{ steps.ver.outputs.version }}
+          draft: true
+          generate_release_notes: true
+          body: |
+            下载 `BootAnimSetup.exe` 双击安装即可。
+
+            **本发行包不包含 FFmpeg。** 如果你想用 MP4 等视频做动画，
+            需要自己准备 `ffmpeg.exe`（放到安装目录，或装进 WSL），
+            详见 README 的「视频支持说明」。
+
+            请务必先读 [SECURITY.md](SECURITY.md) 里的风险提示与恢复步骤 ——
+            这个程序会替换 ESP 上的引导程序，出问题可能开不了机。
+          files: |
+            gui/BootAnimGUI.exe
+            install/BootAnimSetup.exe
+            SHA256SUMS.txt

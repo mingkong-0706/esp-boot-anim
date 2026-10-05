@@ -1,0 +1,53 @@
+## @file
+#  ESP boot animation UEFI application -- EDK2 module definition.
+#
+#  NOTE: [Sources] paths are relative to this INF's directory.  The helper
+#  scripts (build\edk2\build-edk2.bat / build-edk2.sh) copy src\ next to this
+#  file as <edk2>\BootAnimPkg\src\, which is why the paths read "src/xxx.c".
+#
+#  This file is kept pure ASCII on purpose (EDK2's build tools parse it).
+#
+#  Copyright (c) 2024. SPDX-License-Identifier: GPL-3.0-or-later
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = BootAnim
+  FILE_GUID                      = 7b9d2c4e-1a3f-4b6d-9c2e-5f8a0d1b3e47
+  MODULE_TYPE                    = UEFI_APPLICATION
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = UefiMain
+
+[Sources]
+  src/BootAnim.c
+  src/BaAnim.c
+  src/BaConfig.c
+  src/BaFallback.c
+  src/BaGfx.c
+  src/BaGuids.c
+  src/BaImage.c
+  src/BaPlatUefi.c
+  src/BaUtil.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  UefiApplicationEntryPoint
+  UefiBootServicesTableLib
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+
+#
+# No [Protocols] section is needed: the code deliberately does not reference
+# EDK2's gEfiXxxGuid globals, it defines its own GUIDs in src/BaGuids.c
+# (the firmware matches by GUID value).
+#
+[BuildOptions]
+  # Sources contain UTF-8 (Chinese) comments.  MSVC assumes the system code
+  # page for BOM-less files on a Chinese Windows and can then fail to compile,
+  # so force UTF-8 explicitly.  Warnings are relaxed so the module still
+  # builds across EDK2 revisions that set -Werror.
+  MSFT:*_*_*_CC_FLAGS  = /utf-8 /WX- /wd4189 /wd4100 /wd4244
+  GCC:*_*_*_CC_FLAGS   = -finput-charset=UTF-8 -Wno-error -Wno-unused-but-set-variable -Wno-unused-variable

@@ -1,0 +1,25 @@
+## @file
+#  BootAnimPkg package declaration.
+#
+#  Kept pure ASCII on purpose (EDK2's build tools parse this file; a non-UTF-8
+#  Windows locale can mis-decode non-ASCII comments).
+#
+#  Copyright (c) 2024. SPDX-License-Identifier: GPL-3.0-or-later
+##
+
+[Defines]
+  DEC_SPECIFICATION              = 0x00010005
+  PACKAGE_NAME                   = BootAnimPkg
+  PACKAGE_GUID                   = 2c6f1d84-9b3a-4e57-8a1d-6f0c2b7e4a91
+  PACKAGE_VERSION                = 1.0
+
+[Includes]
+  Include
+
+[Guids]
+
+[Protocols]
+
+[PcdsFixedAtBuild]
+
+[PcdsFeatureFlag]
